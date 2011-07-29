@@ -308,7 +308,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 * @param   string|null  $type
 	 * @return  array|int|Jelly_Collection|Jelly_Model
 	 */
-	public function execute($db = NULL, $type = NULL)
+	public function execute($db = NULL, $type = NULL, $ignored = NULL)
 	{
 		$type === NULL AND $type = $this->_type;
 
