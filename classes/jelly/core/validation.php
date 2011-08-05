@@ -43,7 +43,7 @@ abstract class Jelly_Core_Validation extends Validation
 		$data = $this->_errors = array();
 
 		// Store the original data because this class should not modify it post-validation
-		$original = $this->getArrayCopy();
+		$original = $this->_data;
 
 		// Get a list of the expected fields
 		$expected = Arr::merge(array_keys($original), array_keys($this->_labels));
@@ -70,7 +70,7 @@ abstract class Jelly_Core_Validation extends Validation
 		}
 
 		// Overload the current array with the new one
-		$this->exchangeArray($data);
+		$this->_data = $data;
 
 		// Remove the rules that apply to every field
 		unset($rules[TRUE]);
@@ -182,7 +182,7 @@ abstract class Jelly_Core_Validation extends Validation
 		}
 
 		// Restore the data to its original form
-		$this->exchangeArray($original);
+		$this->_data = $original;
 
 		if (isset($benchmark))
 		{
