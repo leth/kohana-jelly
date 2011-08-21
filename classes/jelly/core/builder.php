@@ -154,6 +154,31 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			// Select all of the columns for the model if we haven't already
 			empty($this->_select) AND $this->select_column('*');
 
+			// Check for polymorphic superclasses
+			if ($meta->table_mode() !== Jelly_Model::TABLE_PER_CLASS AND ($parent = $meta->parent_model()) !== NULL)
+			{
+				while ($parent !== NULL)
+				{
+					$curr_meta = Jelly::meta($parent);
+					$table_mode = $curr_meta->table_mode();
+
+					if ($table_mode !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $curr_meta->is_abstract())
+					{
+						$this->join($curr_meta->model())
+							->on(
+								$meta->model().'.'.$meta->primary_key(),
+								'=',
+								$curr_meta->model().'.'.$curr_meta->primary_key());
+					}
+
+					if ($table_mode ===  Jelly_Model::TABLE_PER_CLASS)
+						break;
+
+					$parent = $curr_meta->parent_model();
+				}
+			}
+			// TODO check for any registered subclasses, and join their tables.
+
 			// Trigger before_select callback
 			$meta->events()->trigger('builder.before_select', $this);
 		}

@@ -47,3 +47,26 @@ CREATE TABLE `test_categories_test_posts` (
   `test_category_id` int(11) NOT NULL,
   `test_post_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `test_poly_a`;
+
+CREATE TABLE `test_poly_a` (
+  id INTEGER PRIMARY KEY,
+  field_a varchar(255) NOT NULL,
+  type TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `test_poly_b`;
+
+CREATE TABLE `test_poly_b` (
+  id INTEGER PRIMARY KEY,
+  field_b varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `test_poly_d`;
+
+CREATE TABLE `test_poly_d` (
+  id INTEGER PRIMARY KEY,
+  field_c varchar(255) NOT NULL,
+  field_d varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -58,6 +58,13 @@ abstract class Jelly_Core_Model
 	 */
 	protected $_with = array();
 
+	// Non-polymorphic
+	const TABLE_PER_CLASS = 'class';
+	// Polymorphic
+	const TABLE_PER_SUBCLASS = 'subclass';
+	const TABLE_PER_CONCRETE_SUBCLASS = 'concrete';
+	const TABLE_SUBSUMED = 'subsumed';
+
 	/**
 	 * Constructor.
 	 *

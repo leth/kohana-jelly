@@ -121,4 +121,46 @@
 			<value>3</value>
         </row>
     </table>
+	<table name="test_poly_a">
+		<column>id</column>
+		<column>field_a</column>
+		<column>type</column>
+		<row>
+			<value>1</value>
+			<value>1 field_a</value>
+			<value>a</value>
+		</row>
+		<row>
+			<value>2</value>
+			<value>2 field_a</value>
+			<value>c</value>
+		</row>
+		<row>
+			<value>3</value>
+			<value>3 field_a</value>
+			<value>d</value>
+		</row>
+	</table>
+	<table name="test_poly_b">
+		<column>id</column>
+		<column>field_b</column>
+		<row>
+			<value>2</value>
+			<value>2 field_b</value>
+		</row>
+		<row>
+			<value>3</value>
+			<value>3 field_b</value>
+		</row>
+	</table>
+	<table name="test_poly_d">
+		<column>id</column>
+		<column>field_c</column>
+		<column>field_d</column>
+		<row>
+			<value>3</value>
+			<value>3 field_c</value>
+			<value>3 field_d</value>
+		</row>
+	</table>
 </dataset>

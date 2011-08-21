@@ -110,9 +110,20 @@ abstract class Jelly_Core_Meta
 	protected $_behaviors = array();
 
 	/**
-	 * @var  string  The parent model of this model
+	 * @var  string  The parent model of this model.
 	 */
 	protected $_parent = NULL;
+
+	/**
+	 * @var  int     The table mode of this model, used for polymorphism.
+	 */
+	// TODO throw exception if first class after Jelly_Model has certain table modes
+	protected $_table_mode = Jelly_Model::TABLE_PER_CLASS;
+
+	/**
+	 * @var  boolean Is this model an abstract class.
+	 */
+	protected $_is_abstract;
 
 	/**
 	 * This is called after initialization to
@@ -212,7 +223,65 @@ abstract class Jelly_Core_Meta
 			}
 
 			$field->initialize($model, $column);
+		}
 
+		// Check for inherited fields
+		$class = Jelly::class_name($model);
+		if (class_exists($class))
+		{
+			$concrete_parents = $parents = array();
+
+			$class = new ReflectionClass($class);
+			$this->_is_abstract = $class->isAbstract();
+
+			$current_class = $class;
+			while ($current_class->getName() != 'Jelly_Model')
+			{
+				$classname = $current_class->getName();
+				$meta = ($class == $current_class) ? $this : Jelly::meta(Jelly::model_name($classname));
+				$parents[] = array($classname, $meta, count($concrete_parents));
+				if ( ! $class->isAbstract())
+				{
+					$concrete_parents[] = array($classname, $meta);
+				}
+				$current_class = $current_class->getParentClass();
+			}
+
+			// There is some form of inheritance going on
+			if (count($parents) > 1)
+			{
+				for ($i=1; $i < count($parents); $i++) { 
+					list($classname, $meta,) = $parents[$i];
+
+					if ($meta === FALSE)
+						continue;
+
+					foreach ($meta->_fields as $field_name => $field)
+					{
+						if ( ! isset($this->_fields[$field_name]))
+						{
+							$this->_fields[$field_name] = $field = clone $field;
+						}
+						else
+						{
+							// TODO prevent certain options from having been overridden
+							$this->_fields[$field_name]->model = $meta->_model;
+						}
+						$field_class = new ReflectionClass($classname);
+						if ($field->model == $meta->_model AND $field_class->isAbstract() AND $meta->_table_mode == Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS)
+						{
+							$field->model = $concrete_parents[$parents[$i][2] -1][1]->_model;
+						}
+					}
+				}
+
+				$this->_parent = $parents[1][0];
+			}
+		}
+
+		// Finish initialising this meta, now including the inherited fields
+		foreach ($this->_fields as $column => $field)
+		{
 			// Ensure a default primary key is set
 			if ($field->primary AND empty($this->_primary_key))
 			{
@@ -353,6 +422,42 @@ abstract class Jelly_Core_Meta
 		}
 
 		return $this->_table;
+	}
+
+	/**
+	 * Gets or sets the table mode
+	 *
+	 * @param   string  $value
+	 * @return  int
+	 */
+	public function table_mode($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('table_mode', $value);
+		}
+
+		return $this->_table_mode;
+	}
+
+	/**
+	 * Is this model an abstract class?
+	 *
+	 * @return  boolean
+	 */
+	public function is_abstract()
+	{
+		return $this->_is_abstract;
+	}
+
+	/**
+	 * Gets the parent model
+	 *
+	 * @return  string
+	 */
+	public function parent_model()
+	{
+		return $this->_parent;
 	}
 
 	/**

@@ -48,3 +48,29 @@ CREATE TABLE test_categories_test_posts (
   test_category_id bigint NOT NULL,
   test_post_id bigint NOT NULL
 );
+
+DROP TABLE IF EXISTS test_poly_a;
+
+CREATE TABLE test_poly_a (
+  id serial,
+  field_a varchar(255) NOT NULL,
+  type varchar(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+DROP TABLE IF EXISTS test_poly_b;
+
+CREATE TABLE test_poly_b (
+  id INTEGER,
+  field_b varchar(255) NOT NULL,
+  PRIMARY KEY (id)
+);
+
+DROP TABLE IF EXISTS test_poly_d;
+
+CREATE TABLE test_poly_d (
+  id INTEGER,
+  field_c varchar(255) NOT NULL,
+  field_d varchar(255) NOT NULL,
+  PRIMARY KEY (id)
+);
