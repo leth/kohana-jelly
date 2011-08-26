@@ -18,5 +18,6 @@ class Model_Test_Poly_A extends Jelly_Model
 		));
 		
 		$meta->table('test_poly_a');
+		$meta->children(array('test_poly_b'));
 	}
 }

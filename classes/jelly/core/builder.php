@@ -152,31 +152,16 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		if ($meta)
 		{
 			// Select all of the columns for the model if we haven't already
-			empty($this->_select) AND $this->select_column('*');
-
-			// Check for polymorphic superclasses
-			if ($meta->table_mode() !== Jelly_Model::TABLE_PER_CLASS AND ($parent_meta = $meta->parent()) !== NULL)
+			if (empty($this->_select))
 			{
-				while ($parent_meta !== NULL)
-				{
-					$table_mode = $parent_meta->table_mode();
-
-					if ($table_mode !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $parent_meta->is_abstract())
-					{
-						$this->join($parent_meta->model())
-							->on(
-								$meta->model().'.'.$meta->primary_key(),
-								'=',
-								$parent_meta->model().'.'.$parent_meta->primary_key());
-					}
-
-					if ($table_mode ===  Jelly_Model::TABLE_PER_CLASS)
-						break;
-
-					$parent_meta = $parent_meta->parent();
-				}
+				$columns = array_merge($this->_select_child_columns($meta), $this->_select_parent_columns($meta));
+				$columns[] = '*';
+				$this->select_column($columns);
 			}
-			// TODO check for any registered subclasses, and join their tables.
+
+			// Join polymorphic super- and sub-classes
+			$this->_join_parents($meta);
+			$this->_join_children($meta, $meta);
 
 			// Trigger before_select callback
 			$meta->events()->trigger('builder.before_select', $this);
@@ -205,6 +190,94 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		}
 
 		return $this->_result;
+	}
+
+	protected function _select_parent_columns(Jelly_Meta $meta)
+	{
+		$select = array();
+		$parent_meta = $meta->parent();
+
+		while ($parent_meta !== NULL)
+		{
+			$table_mode = $parent_meta->table_mode();
+
+			if ($table_mode !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $parent_meta->is_abstract())
+			{
+				$select[] = $parent_meta->model().'.*';
+			}
+
+			if ($table_mode ===  Jelly_Model::TABLE_PER_CLASS)
+				break;
+
+			$parent_meta = $parent_meta->parent();
+		}
+
+		return $select;
+	}
+
+	protected function _select_child_columns(Jelly_Meta $meta)
+	{
+		$select = array();
+
+		foreach ($meta->children() as $child_meta)
+		{
+			if ($child_meta->table_mode() !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $child_meta->is_abstract())
+			{
+				$select[] = $child_meta->model().'.*';
+			}
+			$select = array_merge($select, $this->_select_child_columns($child_meta));
+		}
+
+		return $select;
+	}
+
+	protected function _join_parents(Jelly_Meta $meta)
+	{
+		$parent_meta = $meta->parent();
+
+		if ($meta->table_mode() === Jelly_Model::TABLE_PER_CLASS OR $parent_meta === NULL)
+			return;
+
+		while ($parent_meta !== NULL)
+		{
+			$table_mode = $parent_meta->table_mode();
+
+			if ($table_mode !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $parent_meta->is_abstract())
+			{
+				$this->join($parent_meta->model())
+					->on(
+						$meta->model().'.'.$meta->primary_key(),
+						'=',
+						$parent_meta->model().'.'.$parent_meta->primary_key());
+			}
+
+			if ($table_mode ===  Jelly_Model::TABLE_PER_CLASS)
+				break;
+
+			$parent_meta = $parent_meta->parent();
+		}
+	}
+
+	protected function _join_children(Jelly_Meta $root_meta, Jelly_Meta $meta)
+	{
+		foreach ($meta->children() as $child_meta)
+		{
+			$table_mode = $child_meta->table_mode();
+
+			if ($child_meta->table_mode() === Jelly_Model::TABLE_PER_CLASS)
+				continue;
+
+			if ( ! ($child_meta->table_mode() == Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS AND $child_meta->is_abstract()))
+			{
+				$this->join($child_meta->model(), 'LEFT')
+					->on(
+						$root_meta->model().'.'.$root_meta->primary_key(),
+						'=',
+						$child_meta->model().'.'.$child_meta->primary_key());
+			}
+
+			$this->_join_children($root_meta, $child_meta);
+		}
 	}
 
 	/**
@@ -513,7 +586,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 
 						foreach ($meta->fields() as $field)
 						{
-							if ($field->in_db)
+							if ($field->model == $meta->model() AND $field->in_db)
 							{
 								$add[] = array($this->_field_alias($field->model.'.'.$field->name), $field->name);
 							}

@@ -19,5 +19,6 @@ class Model_Test_Poly_B extends Model_Test_Poly_A
 		));
 		
 		$meta->table('test_poly_b');
+		$meta->children(array('test_poly_c'));
 	}
 }

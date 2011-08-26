@@ -19,5 +19,6 @@ abstract class Model_Test_Poly_C extends Model_Test_Poly_B
 		));
 		
 		$meta->table('test_poly_c');
+		$meta->children(array('test_poly_d'));
 	}
 }

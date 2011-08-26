@@ -12,6 +12,8 @@ abstract class Jelly_Core_Meta
 	 */
 	protected $_initialized = FALSE;
 
+	protected $_children_initialized = FALSE;
+
 	/**
 	 * @var  string  The model this meta object belongs to
 	 */
@@ -226,16 +228,17 @@ abstract class Jelly_Core_Meta
 		}
 
 		// Inherit fields from superclasses
-		$class = Jelly::class_name($model);
+		$classname = Jelly::class_name($model);
 		// Sanity check first.
-		if (class_exists($class))
+		if (class_exists($classname))
 		{
-			$class = new ReflectionClass($class);
+			$class = new ReflectionClass($classname);
 			$this->_is_abstract = $class->isAbstract();
 
 			$parent_meta = FALSE;
 			$parent_class = $class->getParentClass();
 
+			// TODO consider effect of empty classes for transparent extension
 			if (($parent_classname = $parent_class->getName()) != 'Jelly_Model')
 			{
 				$parent_meta = Jelly::meta(Jelly::model_name($parent_classname));
@@ -244,6 +247,8 @@ abstract class Jelly_Core_Meta
 			if ($parent_meta !== FALSE)
 			{
 				$this->_parent = $parent_meta;
+				$parent_meta->finalize_child($this);
+
 				foreach ($parent_meta->_fields as $field_name => $field)
 				{
 					// Allow this model to have re-defined the fields to some degree
@@ -297,6 +302,42 @@ abstract class Jelly_Core_Meta
 
 		// Final meta callback
 		$this->_events->trigger('meta.after_finalize', $this);
+	}
+
+	/**
+	 * Finalise a child registration
+	 * @param Jelly_Meta  $child_meta
+	 */
+	public function finalize_child($child_meta)
+	{
+		if (! isset($this->_children[$child_meta->_model]))
+			throw new Kohana_Exception('Submodels must be explicitly registered in superclass. :child not registered in :parent', array(
+				':child' => $child_meta->_model,
+				':parent'   => $this->_model,
+			));
+
+		$this->_children[$child_meta->_model] = $child_meta;
+	}
+
+	public function finalize_children()
+	{
+		if ($this->_children_initialized)
+			return;
+
+		foreach ($this->_children as $child => $meta)
+		{
+			if ($meta === FALSE)
+			{
+				$meta = Jelly::meta($child);
+			}
+			if ($this->_children[$meta->_model] !== $meta)
+				throw new Kohana_Exception('Submodel inheritance mismatch between child model \':child\' and parent \':parent\'.', array(
+					':child' => $meta->_model,
+					':parent'   => $this->_model,
+				));
+		}
+
+		$this->_children_initialized = TRUE;
 	}
 
 	/**
@@ -693,11 +734,19 @@ abstract class Jelly_Core_Meta
 	{
 		if (func_num_args() == 0)
 		{
+			$this->finalize_children();
 			return $this->_children;
 		}
 
-		// Try to append
-		return $this->set_append('children', $children);
+		if ( ! Arr::is_assoc($children))
+		{
+			foreach ($children as $key => $value) {
+				unset($children[$key]);
+				$children[$value] = FALSE;
+			}
+		}
+
+		return $this->set('children', $children);
 	}
 
 	/**
