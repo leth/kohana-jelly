@@ -225,57 +225,45 @@ abstract class Jelly_Core_Meta
 			$field->initialize($model, $column);
 		}
 
-		// Check for inherited fields
+		// Inherit fields from superclasses
 		$class = Jelly::class_name($model);
+		// Sanity check first.
 		if (class_exists($class))
 		{
-			$concrete_parents = $parents = array();
-
 			$class = new ReflectionClass($class);
 			$this->_is_abstract = $class->isAbstract();
 
-			$current_class = $class;
-			while ($current_class->getName() != 'Jelly_Model')
+			$parent_meta = FALSE;
+			$parent_class = $class->getParentClass();
+
+			if (($parent_classname = $parent_class->getName()) != 'Jelly_Model')
 			{
-				$classname = $current_class->getName();
-				$meta = ($class == $current_class) ? $this : Jelly::meta(Jelly::model_name($classname));
-				$parents[] = array($classname, $meta, count($concrete_parents));
-				if ( ! $class->isAbstract())
-				{
-					$concrete_parents[] = array($classname, $meta);
-				}
-				$current_class = $current_class->getParentClass();
+				$parent_meta = Jelly::meta(Jelly::model_name($parent_classname));
 			}
 
-			// There is some form of inheritance going on
-			if (count($parents) > 1)
+			if ($parent_meta !== FALSE)
 			{
-				for ($i=1; $i < count($parents); $i++) { 
-					list($classname, $meta,) = $parents[$i];
-
-					if ($meta === FALSE)
-						continue;
-
-					foreach ($meta->_fields as $field_name => $field)
+				$this->_parent = $parent_meta;
+				foreach ($parent_meta->_fields as $field_name => $field)
+				{
+					// Allow this model to have re-defined the fields to some degree
+					if ( ! isset($this->_fields[$field_name]))
 					{
-						if ( ! isset($this->_fields[$field_name]))
-						{
-							$this->_fields[$field_name] = $field = clone $field;
-						}
-						else
-						{
-							// TODO prevent certain options from having been overridden
-							$this->_fields[$field_name]->model = $meta->_model;
-						}
-						$field_class = new ReflectionClass($classname);
-						if ($field->model == $meta->_model AND $field_class->isAbstract() AND $meta->_table_mode == Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS)
-						{
-							$field->model = $concrete_parents[$parents[$i][2] -1][1]->_model;
-						}
+						$this->_fields[$field_name] = $field = clone $field;
+					}
+					else
+					{
+						// prevent certain options from having been overridden
+						// TODO are there more options to protect?
+						$this->_fields[$field_name]->model = $field->model;
+					}
+
+					// If the parent defined a field, and is set to TABLE_PER_CONCRETE_SUBCLASS, we need to reassign the field to this model.
+					if ($field->model == $parent_meta->_model AND $parent_meta->is_abstract() AND $parent_meta->_table_mode == Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS)
+					{
+						$field->model = $this->_model;
 					}
 				}
-
-				$this->_parent = $parents[1][0];
 			}
 		}
 
@@ -451,11 +439,11 @@ abstract class Jelly_Core_Meta
 	}
 
 	/**
-	 * Gets the parent model
+	 * Gets the meta object of the parent model
 	 *
-	 * @return  string
+	 * @return  Jelly_Meta
 	 */
-	public function parent_model()
+	public function parent()
 	{
 		return $this->_parent;
 	}
