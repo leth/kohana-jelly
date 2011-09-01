@@ -10,7 +10,7 @@ class Model_Test_Post extends Jelly_Model {
 	public static function initialize(Jelly_Meta $meta)
 	{
 		// Set database to connect to
-		$meta->db(Kohana::config('unittest')->db_connection);
+		$meta->db(Kohana::$config->load('jelly_test')->db_connection);
 
 		// Posts always load_with an author
 		$meta->load_with(array('test_author'));

@@ -2,6 +2,13 @@
 
 class Kohana_Unittest_Jelly_TestCase extends Kohana_Unittest_Database_TestCase {
 
+	public function __construct($name = NULL, array $data = array(), $dataName = '')
+	{
+		parent::__construct($name,$data, $dataName);
+
+		$this->_database_connection = Kohana::$config->load('jelly_test')->db_connection;
+	}
+
 	/**
 	* Creates tables.
 	 *
@@ -15,12 +22,13 @@ class Kohana_Unittest_Jelly_TestCase extends Kohana_Unittest_Database_TestCase {
 		parent::setUpBeforeClass();
 
 		// Set database name
-		$db_name = Kohana::config('unittest')->db_connection;
+		$db_name = Kohana::$config->load('jelly_test')->db_connection;
 
 		// Load config
-		$config = Kohana::config('database')->$db_name;
+		$config = Kohana::$config->load('database')->$db_name;
 
 		// Set type
+
 		$type = $config['type'];
 
 		if ($type == 'pdo')
@@ -63,10 +71,10 @@ class Kohana_Unittest_Jelly_TestCase extends Kohana_Unittest_Database_TestCase {
     public function getConnection()
     {
 		// Set database name
-		$db_name = Kohana::config('unittest')->db_connection;
+		$db_name = Kohana::$config->load('jelly_test')->db_connection;
 
 		// Load config
-		$config = Kohana::config('database')->$db_name;
+		$config = Kohana::$config->load('database')->{$this->_database_connection};
 
 		// Create database instance
 		$db = Database::instance($db_name);

@@ -11,7 +11,7 @@ The tests can be run on MySQL, SQLite and PostgreSQL databases.
 If you don't find the configuration files mentioned below copy them from the corresponding module's folder to your application's config folder.
 
 ### Set the database profile for unit testing
-Find your unit test configuration file: *APPATH/config/unittest.php*.
+Find your unit test configuration file: *APPATH/config/jelly_test.php*.
 Set `db_connection` to the database profile (config name) you'll use for unit testing.
 
 ### Always set the database name

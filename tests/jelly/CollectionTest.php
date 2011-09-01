@@ -15,7 +15,7 @@ class Jelly_CollectionTest extends Unittest_Jelly_TestCase {
 	public function provider_construction()
 	{
 		// Set database to connect to
-		$db = Kohana::config('unittest')->db_connection;
+		$db = Kohana::$config->load('jelly_test')->db_connection;
 
 		// Set result
 		$result = DB::select()->from('test_posts');
