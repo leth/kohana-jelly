@@ -480,6 +480,16 @@ abstract class Jelly_Core_Meta
 	}
 
 	/**
+	 * Does this model have polymorphic features (superclasses or subclasses)
+	 *
+	 * @return  boolean
+	 */
+	public function is_polymorphic()
+	{
+		return ($this->_parent !== NULL) OR (count($this->_children) > 0);
+	}
+
+	/**
 	 * Gets the meta object of the parent model
 	 *
 	 * @return  Jelly_Meta
@@ -747,6 +757,25 @@ abstract class Jelly_Core_Meta
 		}
 
 		return $this->set('children', $children);
+	}
+
+	public function tabled_children()
+	{
+		$children = array();
+
+		foreach ($this->children() as $model => $meta)
+		{
+			if ($meta->_is_abstract AND $meta->_table_mode === Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS)
+			{
+				$children = array_merge($children, $meta->tabled_children());
+			}
+			else
+			{
+				$children[$model] = $meta;
+			}
+		}
+
+		return $children;
 	}
 
 	/**

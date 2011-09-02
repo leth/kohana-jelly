@@ -160,8 +160,11 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			}
 
 			// Join polymorphic super- and sub-classes
-			$this->_join_parents($meta);
-			$this->_join_children($meta, $meta);
+			if ($meta->is_polymorphic())
+			{
+				$this->_join_parents($meta);
+				$this->_join_children($meta, $meta);
+			}
 
 			// Trigger before_select callback
 			$meta->events()->trigger('builder.before_select', $this);
@@ -224,6 +227,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			if ($child_meta->table_mode() !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $child_meta->is_abstract())
 			{
 				$select[] = $child_meta->model().'.*';
+				$select[] = array($child_meta->model().'.id', '_'.$child_meta->model().'_id_');
 			}
 			$select = array_merge($select, $this->_select_child_columns($child_meta));
 		}

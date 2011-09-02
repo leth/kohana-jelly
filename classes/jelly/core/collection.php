@@ -237,7 +237,15 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	{
 		if ($this->_model)
 		{
-			$model = clone $this->_model;
+			if (! $this->_meta->is_polymorphic())
+			{
+				$model = clone $this->_model;
+			}
+			else
+			{
+				$class = Jelly_Collection::_find_subclass($this->_meta, $values);
+				$model = new $class;
+			}
 
 			// Don't return models when we don't have one
 			return $values
@@ -247,4 +255,30 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 
 		return $values;
 	}
+
+	protected static function _find_subclass(Jelly_Meta $meta, $values)
+	{
+		$class = Jelly::class_name($meta->model());
+
+		while (true)
+		{
+			$children = $meta->tabled_children();
+
+			foreach ($children as $child_model => $child_meta)
+			{
+				$id_field = '_'.$child_meta->model().'_id_';
+				if (isset($values[$id_field]) AND $values[$id_field] !== NULL)
+				{
+					$class = Jelly::class_name($child_meta->model());
+					$meta = $child_meta;
+					continue 2;
+				}
+			}
+
+			break;
+		}
+
+		return $class;
+	}
+
 } // End Jelly_Core_Collection
