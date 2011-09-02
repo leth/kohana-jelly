@@ -266,6 +266,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 
 			foreach ($children as $child_model => $child_meta)
 			{
+				// TODO remove these fields from the values array.
 				$id_field = '_'.$child_meta->model().'_id_';
 				if (isset($values[$id_field]) AND $values[$id_field] !== NULL)
 				{

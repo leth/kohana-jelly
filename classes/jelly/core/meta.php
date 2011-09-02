@@ -489,6 +489,11 @@ abstract class Jelly_Core_Meta
 		return ($this->_parent !== NULL) OR (count($this->_children) > 0);
 	}
 
+	public function is_tabled()
+	{
+		return ! ($this->_is_abstract AND $this->_table_mode === Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS);
+	}
+
 	/**
 	 * Gets the meta object of the parent model
 	 *
@@ -765,13 +770,13 @@ abstract class Jelly_Core_Meta
 
 		foreach ($this->children() as $model => $meta)
 		{
-			if ($meta->_is_abstract AND $meta->_table_mode === Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS)
+			if ($meta->is_tabled())
 			{
-				$children = array_merge($children, $meta->tabled_children());
+				$children[$model] = $meta;
 			}
 			else
 			{
-				$children[$model] = $meta;
+				$children = array_merge($children, $meta->tabled_children());
 			}
 		}
 

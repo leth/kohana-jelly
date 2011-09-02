@@ -204,7 +204,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		{
 			$table_mode = $parent_meta->table_mode();
 
-			if ($table_mode !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $parent_meta->is_abstract())
+			if ($parent_meta->is_tabled())
 			{
 				$select[] = $parent_meta->model().'.*';
 			}
@@ -222,13 +222,12 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	{
 		$select = array();
 
-		foreach ($meta->children() as $child_meta)
+		foreach ($meta->tabled_children() as $child_meta)
 		{
-			if ($child_meta->table_mode() !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $child_meta->is_abstract())
-			{
-				$select[] = $child_meta->model().'.*';
-				$select[] = array($child_meta->model().'.id', '_'.$child_meta->model().'_id_');
-			}
+			$select[] = $child_meta->model().'.*';
+			// TODO consider a better column name convention.
+			$select[] = array($child_meta->model().'.'.$child_meta->primary_key(), '_'.$child_meta->model().'_id_');
+
 			$select = array_merge($select, $this->_select_child_columns($child_meta));
 		}
 
@@ -246,7 +245,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		{
 			$table_mode = $parent_meta->table_mode();
 
-			if ($table_mode !== Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS OR ! $parent_meta->is_abstract())
+			if ($parent_meta->is_tabled())
 			{
 				$this->join($parent_meta->model())
 					->on(
@@ -264,21 +263,18 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 
 	protected function _join_children(Jelly_Meta $root_meta, Jelly_Meta $meta)
 	{
-		foreach ($meta->children() as $child_meta)
+		foreach ($meta->tabled_children() as $child_meta)
 		{
 			$table_mode = $child_meta->table_mode();
 
 			if ($child_meta->table_mode() === Jelly_Model::TABLE_PER_CLASS)
-				continue;
+				continue; // TODO Probably ought to union these models.
 
-			if ( ! ($child_meta->table_mode() == Jelly_Model::TABLE_PER_CONCRETE_SUBCLASS AND $child_meta->is_abstract()))
-			{
-				$this->join($child_meta->model(), 'LEFT')
-					->on(
-						$root_meta->model().'.'.$root_meta->primary_key(),
-						'=',
-						$child_meta->model().'.'.$child_meta->primary_key());
-			}
+			$this->join($child_meta->model(), 'LEFT')
+				->on(
+					$root_meta->model().'.'.$root_meta->primary_key(),
+					'=',
+					$child_meta->model().'.'.$child_meta->primary_key());
 
 			$this->_join_children($root_meta, $child_meta);
 		}
